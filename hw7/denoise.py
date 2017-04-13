@@ -1,7 +1,7 @@
 from struct import unpack
 from numpy import zeros, uint8, float32
 import matplotlib.pyplot as plt
-from matplotlib.pylab import imshow, show, cm
+from scipy import misc
 
 def get_data():
     images = open('train-images.idx3-ubyte', 'rb')
@@ -22,12 +22,10 @@ def get_data():
                 tmp_pixel = images.read(1)
                 tmp_pixel = unpack('>B', tmp_pixel)[0]
                 img_data[i][row][col] = tmp_pixel
-        view_image(img_data[i])
+        
 
 def view_image(image):
-    imshow(image)
-    plt.draw()
-    plt.savefig('imgs/cdd.png')
+    misc.imsave('imgs/cdd.png', image)
     
 def main(): 
     get_data()   
