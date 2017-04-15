@@ -4,16 +4,8 @@ from numpy import zeros, uint8, float32
 from struct import unpack
 from scipy import misc
 from random import randint
-from matplotlib.pylab import imshow, show, cm
+from matplotlib.pylab import *
 from math import exp
-
-def create_noise(image):
-    for i in range(28):
-        for j in range(28):
-            rand = randint(0, 99)
-            if rand < 2:
-                image[i][j] = -image[i][j]
-    return image
 
 def get_data():
     images = open('train-images.idx3-ubyte', 'rb')
@@ -25,8 +17,9 @@ def get_data():
     rows = unpack('>I', rows)[0]
     cols = images.read(4)
     cols = unpack('>I', cols)[0]
-    img_500 = 1
+    img_500 = 10
     # Get image datas
+    correct_rate = zeros((img_500, ), dtype=float32)
     img_data = zeros((img_500, rows, cols), dtype=float32)
     noised_imgs = zeros((img_500, rows, cols), dtype=float32)
     denoised_imgs = zeros((img_500, rows, cols), dtype=float32)
@@ -38,18 +31,41 @@ def get_data():
                 img_data[i][row][col] = float(tmp_pixel)/255
         img_data[i][img_data[i] >= 0.5] = 1
         img_data[i][img_data[i] < 0.5] = -1
-        view_image(img_data[i], 'original')
         noised_imgs[i] = create_noise(img_data[i])
-        view_image(noised_imgs[i], 'noise')
         denoised_imgs[i] = denoise(img_data[i])
-        view_image(denoised_imgs[i], 'denoise')
-        cdd = 1
-       
+        correct_rate[i] = float(len(img_data[i][np.equal(img_data[i], denoised_imgs[i])]))/(rows * cols)
+    # save correct rate
+    # np.savetxt("correct_rate.csv", correct_rate, delimiter=",")
+    plot_accuracy(correct_rate)
+    cdd = 0
+
+# plot accuracy rate
+def plot_accuracy(correct_rate):
+    x = np.arange(len(correct_rate))
+    fig = plt.figure(figsize=(5, 4))
+    title('Accuracy rate of each image')
+    xlabel('Images')
+    ylabel('Accuracy rate')
+    tight_layout()
+    axScatter = plt.subplot(111)
+    axScatter.scatter(x, correct_rate)
+    fig.savefig("scatterplot.png")
+    cdd = 0
+
+# create a noisy version by randomly flipping 2% of the bits
+def create_noise(image):
+    for i in range(28):
+        for j in range(28):
+            rand = randint(0, 99)
+            if rand < 2:
+                image[i][j] = -image[i][j]
+    return image
+
 def denoise(image):
     dim = 28
-    # initialize probability
     theta_hh = 0.2
     theta_hx = 2
+    # initialize probability
     probabilities = np.full((dim, dim), 0.5)
     energy = 0
     energy_prev = 1
@@ -80,11 +96,9 @@ def construct_image(image, probabilities):
     return image
 
 def view_image(image, name):
-    # image[image == -1] = 0
-    # imshow(image, cmap='Greys', interpolation='nearest')
-    # show()
-    # image_name = 'imgs/'+name+'.png'
-    misc.imsave('imgs/'+name+'.png', image)
+    imshow(image, cmap='Greys', interpolation='nearest')
+    show()
+    # misc.imsave('imgs/'+name+'.png', image)
     
 def main(): 
     get_data()
