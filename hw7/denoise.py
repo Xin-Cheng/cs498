@@ -17,7 +17,7 @@ def get_data():
     rows = unpack('>I', rows)[0]
     cols = images.read(4)
     cols = unpack('>I', cols)[0]
-    img_500 = 10
+    img_500 = 500
     # Get image datas
     accuracy_rate = zeros((img_500, ), dtype=float32)
     img_data = zeros((img_500, rows, cols), dtype=float32)
@@ -39,12 +39,23 @@ def get_data():
     plot_accuracy(accuracy_rate)
     plot_image(accuracy_rate.argmax(), 'most_accurate', img_data, noised_imgs, denoised_imgs)
     plot_image(accuracy_rate.argmin(), 'least_accurate', img_data, noised_imgs, denoised_imgs)
-    cdd = 0
 
 def plot_image(index, name, image_data, noised_imgs, denoised_imgs):
     misc.imsave('imgs/'+name+'_original.png', image_data[index])
-    misc.imsave('imgs/'+name+'_noise.png', noised_imgs[index])
+    misc.imsave('imgs/'+name+'_noised.png', noised_imgs[index])
     misc.imsave('imgs/'+name+'_reconstruction.png', denoised_imgs[index])
+    noise = zeros((28, 28))
+    for r in range(28):
+        for c in range(28):
+            if noised_imgs[index][r][c] != image_data[index][r][c]:
+                noise[r][c] = 1
+    misc.imsave('imgs/'+name+'_noise.png', noise)
+    error = zeros((28, 28))
+    for r in range(28):
+        for c in range(28):
+            if denoised_imgs[index][r][c] != image_data[index][r][c]:
+                error[r][c] = 1
+    misc.imsave('imgs/'+name+'_error.png', error)
 
 # plot accuracy rate
 def plot_accuracy(correct_rate):
