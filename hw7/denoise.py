@@ -19,7 +19,7 @@ def get_data():
     cols = unpack('>I', cols)[0]
     img_500 = 10
     # Get image datas
-    correct_rate = zeros((img_500, ), dtype=float32)
+    accuracy_rate = zeros((img_500, ), dtype=float32)
     img_data = zeros((img_500, rows, cols), dtype=float32)
     noised_imgs = zeros((img_500, rows, cols), dtype=float32)
     denoised_imgs = zeros((img_500, rows, cols), dtype=float32)
@@ -32,12 +32,19 @@ def get_data():
         img_data[i][img_data[i] >= 0.5] = 1
         img_data[i][img_data[i] < 0.5] = -1
         noised_imgs[i] = create_noise(img_data[i])
-        denoised_imgs[i] = denoise(img_data[i])
-        correct_rate[i] = float(len(img_data[i][np.equal(img_data[i], denoised_imgs[i])]))/(rows * cols)
+        denoised_imgs[i] = denoise(noised_imgs[i])
+        accuracy_rate[i] = float(len(img_data[i][np.equal(img_data[i], denoised_imgs[i])]))/(rows * cols)
     # save correct rate
-    # np.savetxt("correct_rate.csv", correct_rate, delimiter=",")
-    plot_accuracy(correct_rate)
+    np.savetxt("accuracy_rate.csv", accuracy_rate, delimiter=",")
+    plot_accuracy(accuracy_rate)
+    plot_image(accuracy_rate.argmax(), 'most_accurate', img_data, noised_imgs, denoised_imgs)
+    plot_image(accuracy_rate.argmin(), 'least_accurate', img_data, noised_imgs, denoised_imgs)
     cdd = 0
+
+def plot_image(index, name, image_data, noised_imgs, denoised_imgs):
+    misc.imsave('imgs/'+name+'_original.png', image_data[index])
+    misc.imsave('imgs/'+name+'_noise.png', noised_imgs[index])
+    misc.imsave('imgs/'+name+'_reconstruction.png', denoised_imgs[index])
 
 # plot accuracy rate
 def plot_accuracy(correct_rate):
@@ -46,20 +53,20 @@ def plot_accuracy(correct_rate):
     title('Accuracy rate of each image')
     xlabel('Images')
     ylabel('Accuracy rate')
-    tight_layout()
     axScatter = plt.subplot(111)
-    axScatter.scatter(x, correct_rate)
-    fig.savefig("scatterplot.png")
-    cdd = 0
+    axScatter.scatter(x, correct_rate, c = 'red', lw = 0)
+    axScatter.plot(x, correct_rate)
+    fig.savefig("scatterplot.png", bbox_inches='tight', pad_inches=0.2)
 
 # create a noisy version by randomly flipping 2% of the bits
 def create_noise(image):
+    noised_imgs = np.copy(image)
     for i in range(28):
         for j in range(28):
             rand = randint(0, 99)
             if rand < 2:
-                image[i][j] = -image[i][j]
-    return image
+                noised_imgs[i][j] = -noised_imgs[i][j]
+    return noised_imgs
 
 def denoise(image):
     dim = 28
@@ -94,11 +101,6 @@ def construct_image(image, probabilities):
     image[image > 0.5] = 1
     image[image < 0.5] = -1
     return image
-
-def view_image(image, name):
-    imshow(image, cmap='Greys', interpolation='nearest')
-    show()
-    # misc.imsave('imgs/'+name+'.png', image)
     
 def main(): 
     get_data()
