@@ -82,11 +82,11 @@ def denoise(image, theta_hh):
     theta_hx = 2
     # initialize probability
     probabilities = np.full((dim, dim), 0.5)
-    energy = 0
-    energy_prev = 1
-    while abs(energy - energy_prev) > 0.001:
-        energy_prev = energy
-        energy = 0
+    diff = 0
+    diff_prev = 1
+    while abs(diff - diff_prev) > 0.001:
+        diff_prev = diff
+        diff = 0
         for r in range(dim):
             for c in range(dim):
                 first_up = 0 if r == 0 else theta_hh*(2*probabilities[r - 1][c] - 1)
@@ -101,7 +101,7 @@ def denoise(image, theta_hh):
                 second_x = theta_hx*image[r][c]
                 log_positive = first_up + first_down + first_left + first_right + first_h + second_up + second_down + second_left + second_right + second_x
                 probabilities[r][c] = exp(log_positive)/(exp(log_positive) + exp(0 - log_positive))
-                energy += probabilities[r][c]*log_positive
+                diff += probabilities[r][c]*log_positive
     return construct_image(image, probabilities)
         
 def construct_image(image, probabilities):
