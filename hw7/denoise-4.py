@@ -17,15 +17,18 @@ def get_data():
     rows = unpack('>I', rows)[0]
     cols = images.read(4)
     cols = unpack('>I', cols)[0]
-    theta_hhs = [-1, -0.6, -0.3, 0.3, 0.6, 1]
+    theta_hhs = np.array([-1, -0.95, -0.9, -0.8, -0.85, 0.5, 1])
     img_500 = 500
     # Get image datas
-    TPRs = zeros((len(theta_hhs), img_500), dtype=float32)
-    FPRs = zeros((len(theta_hhs), img_500), dtype=float32)
+    N = zeros(len(theta_hhs))
+    P = zeros(len(theta_hhs))
+    TP = zeros(len(theta_hhs), dtype=float32)
+    FP = zeros(len(theta_hhs), dtype=float32)
     img_data = zeros((img_500, rows, cols), dtype=float32)
     noised_imgs = zeros((img_500, rows, cols), dtype=float32)
     denoised_imgs = zeros((len(theta_hhs), img_500, rows, cols), dtype=float32)
     for i in range(img_500):
+        print i
         for row in range(rows):
             for col in range(cols):
                 tmp_pixel = images.read(1)
@@ -37,31 +40,31 @@ def get_data():
         # try different theta_hi_hj
         for theta in range(len(theta_hhs)):
             denoised_imgs[theta][i] = denoise(noised_imgs[i], theta_hhs[theta])
-            N = len(img_data[i][ np.where( img_data[i] == -1 ) ])
-            P = len(img_data[i][ np.where( img_data[i] == 1 ) ])
-            TP = 0
-            FP = 0
+            N[theta] += len(img_data[i][ np.where( img_data[i] == -1 ) ])
+            P[theta] += len(img_data[i][ np.where( img_data[i] == 1 ) ])
             for r in range(rows):
                 for c in range(cols):
                     if denoised_imgs[theta][i][r][c] == 1 and img_data[i][r][c] == 1:
-                        TP += 1
+                        TP[theta] += 1
                     if denoised_imgs[theta][i][r][c] == 1 and img_data[i][r][c] == -1:
-                        FP += 1
-            TPRs[theta][i] = float(TP)/P
-            FPRs[theta][i] = float(FP)/N
+                        FP[theta] += 1
+    TPRs = TP/P
+    FPRs = FP/N
     plot_ROC(theta_hhs, TPRs, FPRs)
 
 # plot accuracy rate
 def plot_ROC(theta_hhs, TPRs, FPRs):
-    TPRs.sort(axis=1)
-    FPRs.sort(axis=1)
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    labels = []
+    dots = []
     plt.figure()
-    for i in range(6):
-        plt.plot(FPRs[i], TPRs[i], lw=2, label='Theta = %0.2f' % theta_hhs[i])
+    for i in range(len(theta_hhs)):
+        dots.append(plt.scatter(FPRs[i], TPRs[i], s=50, c = colors[i], alpha=0.5))
+        labels.append('Theta = ' + str(theta_hhs[i]))
+    plt.legend(dots, labels, scatterpoints=1,loc='lower left', ncol=3, fontsize=8)
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic of Different Thetas')
-    plt.legend(loc="lower right")
     plt.savefig("ROC.png", bbox_inches='tight', pad_inches=0.2)
 
 # create a noisy version by randomly flipping 2% of the bits
