@@ -1,3 +1,9 @@
+#######################################################################
+## xcheng11, pgvaish2
+## CS498 Spring 2017 HW7
+## Denoise
+##       
+#######################################################################
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy import zeros, uint8, float32
@@ -28,7 +34,6 @@ def get_data():
     noised_imgs = zeros((img_500, rows, cols), dtype=float32)
     denoised_imgs = zeros((len(theta_hhs), img_500, rows, cols), dtype=float32)
     for i in range(img_500):
-        print i
         for row in range(rows):
             for col in range(cols):
                 tmp_pixel = images.read(1)

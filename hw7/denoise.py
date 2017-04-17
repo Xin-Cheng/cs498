@@ -1,3 +1,9 @@
+#######################################################################
+## xcheng11, pgvaish2
+## CS498 Spring 2017 HW7
+## Denoise
+##       
+#######################################################################
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy import zeros, uint8, float32
@@ -17,6 +23,7 @@ def get_data():
     rows = unpack('>I', rows)[0]
     cols = images.read(4)
     cols = unpack('>I', cols)[0]
+    overall_accuracy = 0
     img_500 = 500
     # Get image datas
     accuracy_rate = zeros((img_500, ), dtype=float32)
@@ -33,10 +40,13 @@ def get_data():
         img_data[i][img_data[i] < 0.5] = -1
         noised_imgs[i] = create_noise(img_data[i])
         denoised_imgs[i] = denoise(noised_imgs[i])
+        overall_accuracy += len(img_data[i][np.equal(img_data[i], denoised_imgs[i])])
         accuracy_rate[i] = float(len(img_data[i][np.equal(img_data[i], denoised_imgs[i])]))/(rows * cols)
+    overall_accuracy = float(overall_accuracy)/(rows*cols*img_500)
     # save correct rate
+    plot_accuracy(accuracy_rate, overall_accuracy)
+    accuracy_rate = np.insert(accuracy_rate, 0, overall_accuracy)
     np.savetxt("accuracy_rate.csv", accuracy_rate, delimiter=",")
-    plot_accuracy(accuracy_rate)
     plot_image(accuracy_rate.argmax(), 'most_accurate', img_data, noised_imgs, denoised_imgs)
     plot_image(accuracy_rate.argmin(), 'least_accurate', img_data, noised_imgs, denoised_imgs)
 
@@ -58,12 +68,13 @@ def plot_image(index, name, image_data, noised_imgs, denoised_imgs):
     misc.imsave('imgs/'+name+'_error.png', error)
 
 # plot accuracy rate
-def plot_accuracy(correct_rate):
+def plot_accuracy(correct_rate, overall_accuracy):
     x = np.arange(len(correct_rate))
     fig = plt.figure(figsize=(5, 4))
     title('Accuracy rate of each image')
     xlabel('Images')
     ylabel('Accuracy rate')
+    plt.axhline(y=overall_accuracy, color='navy', linestyle='--')
     axScatter = plt.subplot(111)
     axScatter.scatter(x, correct_rate, c = 'red', lw = 0)
     axScatter.plot(x, correct_rate)
@@ -87,7 +98,7 @@ def denoise(image):
     probabilities = np.full((dim, dim), 0.5)
     diff = 0
     diff_prev = 1
-    while abs(diff - diff_prev) > 0.001:
+    while abs(diff - diff_prev) > 10**-6:
         diff_prev = diff
         diff = 0
         for r in range(dim):
