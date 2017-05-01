@@ -35,11 +35,6 @@ import tensorflow as tf
 
 FLAGS = None
 
-# config
-batch_size = 100
-learning_rate = 0.5
-training_epochs = 200
-
 def deepnn(x):
   """deepnn builds the graph for a deep net for classifying digits.
 
@@ -143,7 +138,7 @@ def main(_):
       xs, ys = mnist.train.next_batch(100, fake_data=FLAGS.fake_data)
       k = FLAGS.dropout
     else:
-      xs, ys = mnist.test.images, mnist.test.labels
+      xs, ys = mnist.test.images[0:7000, :], mnist.test.labels[0:7000, :]
       k = 1.0
     return {x: xs, y_: ys, keep_prob: k}
 
@@ -153,13 +148,13 @@ def main(_):
     with tf.name_scope('accuracy'):
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   tf.summary.scalar('accuracy', accuracy)
-
   merged = tf.summary.merge_all()
-  
+
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     writer = tf.summary.FileWriter('/tmp/tensorflow/mnist/part2', sess.graph)
-    for i in range(1000):
+    num_of_epoch = 2000
+    for i in range(num_of_epoch):
       batch = mnist.train.next_batch(100)
       if i % 100 == 99:
         summary, acc = sess.run([merged, accuracy], feed_dict=feed_dict(False))
@@ -167,8 +162,7 @@ def main(_):
         print('Accuracy at step %s: %s' % (i, acc))
       train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
     print('test accuracy %g' % accuracy.eval(feed_dict={
-        x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
-
+        x: mnist.test.images[0:7000, :], y_: mnist.test.labels[0:7000, :], keep_prob: 1.0}))
   writer.close()
 
 if __name__ == '__main__':
