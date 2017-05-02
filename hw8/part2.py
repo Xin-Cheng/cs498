@@ -112,12 +112,11 @@ def bias_variable(shape):
   initial = tf.constant(0.1, shape=shape)
   return tf.Variable(initial)
 
+step = 20000
 
 def main(_):
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir,
-                                    one_hot=True,
-                                    fake_data=FLAGS.fake_data)
+  mnist = input_data.read_data_sets(FLAGS.data_dir,one_hot=True,fake_data=FLAGS.fake_data)
 
   # Create the model
   x = tf.placeholder(tf.float32, [None, 784])
@@ -128,9 +127,9 @@ def main(_):
   # Build the graph for the deep net
   y_conv, keep_prob = deepnn(x)
 
-  cross_entropy = tf.reduce_mean(
-      tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
-  train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+  cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
+  learning_rate = tf.train.exponential_decay(1e-4, step, 1000, 0.99, staircase=True)
+  train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
 
   def feed_dict(train):
     """Make a TensorFlow feed_dict: maps data onto Tensor placeholders."""
@@ -138,7 +137,7 @@ def main(_):
       xs, ys = mnist.train.next_batch(100, fake_data=FLAGS.fake_data)
       k = FLAGS.dropout
     else:
-      xs, ys = mnist.test.images[0:7000, :], mnist.test.labels[0:7000, :]
+      xs, ys = mnist.test.images, mnist.test.labels
       k = 1.0
     return {x: xs, y_: ys, keep_prob: k}
 
@@ -153,8 +152,7 @@ def main(_):
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     writer = tf.summary.FileWriter('/tmp/tensorflow/mnist/part2', sess.graph)
-    num_of_epoch = 2000
-    for i in range(num_of_epoch):
+    for i in range(step):
       batch = mnist.train.next_batch(100)
       if i % 100 == 99:
         summary, acc = sess.run([merged, accuracy], feed_dict=feed_dict(False))
@@ -162,7 +160,7 @@ def main(_):
         print('Accuracy at step %s: %s' % (i, acc))
       train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
     print('test accuracy %g' % accuracy.eval(feed_dict={
-        x: mnist.test.images[0:7000, :], y_: mnist.test.labels[0:7000, :], keep_prob: 1.0}))
+        x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
   writer.close()
 
 if __name__ == '__main__':
