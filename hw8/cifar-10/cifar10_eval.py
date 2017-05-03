@@ -51,7 +51,7 @@ tf.app.flags.DEFINE_string('eval_data', 'test',
                            """Either 'test' or 'train_eval'.""")
 tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/cifar10_train',
                            """Directory where to read model checkpoints.""")
-tf.app.flags.DEFINE_integer('eval_interval_secs', 1,
+tf.app.flags.DEFINE_integer('eval_interval_secs', 2,
                             """How often to run the eval.""")
 tf.app.flags.DEFINE_integer('num_examples', 10000,
                             """Number of examples to run.""")
@@ -110,7 +110,7 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
       coord.request_stop(e)
 
     coord.request_stop()
-    coord.join(threads, stop_grace_period_secs=10)
+    coord.join(threads, stop_grace_period_secs=2)
 
 
 def evaluate():
