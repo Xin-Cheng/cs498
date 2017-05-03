@@ -1,4 +1,4 @@
-# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2015 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,10 +38,12 @@ from datetime import datetime
 import math
 import time
 
+import tensorflow.python.platform
+from tensorflow.python.platform import gfile
 import numpy as np
 import tensorflow as tf
 
-import cifar10
+from tensorflow.models.image.cifar10 import cifar10
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -115,7 +117,7 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
 
 def evaluate():
   """Eval CIFAR-10 for a number of steps."""
-  with tf.Graph().as_default() as g:
+  with tf.Graph().as_default():
     # Get images and labels for CIFAR-10.
     eval_data = FLAGS.eval_data == 'test'
     images, labels = cifar10.inputs(eval_data=eval_data)
@@ -134,9 +136,11 @@ def evaluate():
     saver = tf.train.Saver(variables_to_restore)
 
     # Build the summary operation based on the TF collection of Summaries.
-    summary_op = tf.summary.merge_all()
+    summary_op = tf.merge_all_summaries()
 
-    summary_writer = tf.summary.FileWriter(FLAGS.eval_dir, g)
+    graph_def = tf.get_default_graph().as_graph_def()
+    summary_writer = tf.train.SummaryWriter(FLAGS.eval_dir,
+                                            graph_def=graph_def)
 
     while True:
       eval_once(saver, summary_writer, top_k_op, summary_op)
@@ -147,9 +151,9 @@ def evaluate():
 
 def main(argv=None):  # pylint: disable=unused-argument
   cifar10.maybe_download_and_extract()
-  if tf.gfile.Exists(FLAGS.eval_dir):
-    tf.gfile.DeleteRecursively(FLAGS.eval_dir)
-  tf.gfile.MakeDirs(FLAGS.eval_dir)
+  if gfile.Exists(FLAGS.eval_dir):
+    gfile.DeleteRecursively(FLAGS.eval_dir)
+  gfile.MakeDirs(FLAGS.eval_dir)
   evaluate()
 
 
