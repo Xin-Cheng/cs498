@@ -53,18 +53,18 @@ tf.app.flags.DEFINE_string('eval_data', 'test',
                            """Either 'test' or 'train_eval'.""")
 tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/cifar10_train',
                            """Directory where to read model checkpoints.""")
-tf.app.flags.DEFINE_integer('eval_interval_secs', 60,
+tf.app.flags.DEFINE_integer('eval_interval_secs', 1,
                             """How often to run the eval.""")
 tf.app.flags.DEFINE_integer('num_examples', 10000,
                             """Number of examples to run.""")
-tf.app.flags.DEFINE_boolean('run_once', False,
+tf.app.flags.DEFINE_boolean('run_once', True,
                          """Whether to run eval only once.""")
 tf.app.flags.DEFINE_string('train_dir', '/tmp/cifar10_train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 2000,
                             """Number of batches to run.""")
-tf.app.flags.DEFINE_boolean('log_device_placement', False,
+tf.app.flags.DEFINE_boolean('log_device_placement', True,
                             """Whether to log device placement.""")
 tf.app.flags.DEFINE_integer('log_frequency', 1,
                             """How often to log results to the console.""")
@@ -120,7 +120,7 @@ def eval_once(saver, summary_writer, top_k_op, summary_op):
       coord.request_stop(e)
 
     coord.request_stop()
-    coord.join(threads, stop_grace_period_secs=10)
+    coord.join(threads, stop_grace_period_secs=1)
 
 
 def evaluate():
@@ -148,10 +148,7 @@ def evaluate():
 
     summary_writer = tf.summary.FileWriter(FLAGS.eval_dir, g)
 
-    while True:
-      eval_once(saver, summary_writer, top_k_op, summary_op)
-      if FLAGS.run_once:
-        break
+    eval_once(saver, summary_writer, top_k_op, summary_op)
 
 def train():
   """Train CIFAR-10 for a number of steps."""
@@ -198,17 +195,15 @@ def train():
           if self._step % 10 == 0:
             print (format_str % (datetime.now(), self._step, loss_value,
                                examples_per_sec, sec_per_batch))
-          with tf.device('/cpu:0'):
-            if tf.gfile.Exists(FLAGS.eval_dir):
-              tf.gfile.DeleteRecursively(FLAGS.eval_dir)
-            tf.gfile.MakeDirs(FLAGS.eval_dir)
-            evaluate()
-
+          evaluate()
+    
+    tf.gfile.MakeDirs(FLAGS.eval_dir)
     with tf.train.MonitoredTrainingSession(
         checkpoint_dir=FLAGS.train_dir,
         hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
                tf.train.NanTensorHook(loss),
                _LoggerHook()],
+        save_checkpoint_secs=7,
         config=tf.ConfigProto(
             log_device_placement=FLAGS.log_device_placement)) as mon_sess:
       while not mon_sess.should_stop():
@@ -220,6 +215,9 @@ def main(argv=None):  # pylint: disable=unused-argument
   if tf.gfile.Exists(FLAGS.train_dir):
     tf.gfile.DeleteRecursively(FLAGS.train_dir)
   tf.gfile.MakeDirs(FLAGS.train_dir)
+  if tf.gfile.Exists(FLAGS.eval_dir):
+    tf.gfile.DeleteRecursively(FLAGS.eval_dir)
+  tf.gfile.MakeDirs(FLAGS.eval_dir)
   train()
 
 

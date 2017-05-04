@@ -142,7 +142,7 @@ def evaluate():
       eval_once(saver, summary_writer, top_k_op, summary_op)
       if FLAGS.run_once:
         break
-      time.sleep(FLAGS.eval_interval_secs)
+      # time.sleep(FLAGS.eval_interval_secs)
 
 
 def main(argv=None):  # pylint: disable=unused-argument
