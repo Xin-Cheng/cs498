@@ -62,11 +62,11 @@ tf.app.flags.DEFINE_boolean('run_once', True,
 tf.app.flags.DEFINE_string('train_dir', '/tmp/cifar10_train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 2000,
+tf.app.flags.DEFINE_integer('max_steps', 20000,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_boolean('log_device_placement', True,
                             """Whether to log device placement.""")
-tf.app.flags.DEFINE_integer('log_frequency', 1,
+tf.app.flags.DEFINE_integer('log_frequency', 100,
                             """How often to log results to the console.""")
 
 def eval_once(saver, summary_writer, top_k_op, summary_op):
@@ -192,10 +192,10 @@ def train():
 
           format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f '
                         'sec/batch)')
-          if self._step % 10 == 0:
+          if self._step % 100 == 0:
             print (format_str % (datetime.now(), self._step, loss_value,
                                examples_per_sec, sec_per_batch))
-          evaluate()
+            evaluate()
     
     tf.gfile.MakeDirs(FLAGS.eval_dir)
     with tf.train.MonitoredTrainingSession(
@@ -203,7 +203,7 @@ def train():
         hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
                tf.train.NanTensorHook(loss),
                _LoggerHook()],
-        save_checkpoint_secs=7,
+        save_checkpoint_secs=30,
         config=tf.ConfigProto(
             log_device_placement=FLAGS.log_device_placement)) as mon_sess:
       while not mon_sess.should_stop():
