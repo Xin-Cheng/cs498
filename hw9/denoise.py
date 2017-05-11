@@ -115,7 +115,7 @@ def test_mnist():
     mean_img = np.mean(mnist.train.images, axis=0)
     dim = [784, 512, 256, 128, 64, 32]
     ae = autoencoder(dimensions=dim)
-
+    p = pca(ae, dim)
     # %%
     learning_rate = 0.001
     optimizer = tf.train.AdamOptimizer(learning_rate).minimize(ae['cost'])
@@ -128,7 +128,7 @@ def test_mnist():
     # %%
     # Fit all training data
     batch_size = 100
-    n_epochs = 5
+    n_epochs = 10
     for epoch_i in range(n_epochs):
         for batch_i in range(mnist.train.num_examples // batch_size):
             batch_xs, _ = mnist.train.next_batch(batch_size)
@@ -136,16 +136,16 @@ def test_mnist():
             sess.run(optimizer, feed_dict={
                 ae['x']: train, ae['corrupt_prob']: [1.0]})
         print(epoch_i, sess.run(ae['cost'], feed_dict={ae['x']: train, ae['corrupt_prob']: [1.0]}))
-
+    
     # %%
     # Plot example reconstructions
     n_examples = 15
     test_xs, _ = mnist.test.next_batch(n_examples)
     test_xs_norm = np.array([img - mean_img for img in test_xs])
     recon = sess.run(ae['y'], feed_dict={ae['x']: test_xs_norm, ae['corrupt_prob']: [0.0]})
-    p = pca(ae, dim)
-    sess.run(tf.initialize_all_variables())
+    
     p_recon = sess.run(p['y'], feed_dict={p['x']: test_xs_norm})
+
     fig, axs = plt.subplots(4, n_examples, figsize=(10, 2))
 
     for example_i in range(n_examples):
