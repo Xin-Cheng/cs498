@@ -8,6 +8,7 @@ import math
 from utils import corrupt
 from sklearn.decomposition import PCA
 from numpy import linalg as LA
+import matplotlib.pyplot as plt
 
 # %%
 def autoencoder(dimensions=[784, 512, 256, 128, 64, 32]):
@@ -81,8 +82,7 @@ def autoencoder(dimensions=[784, 512, 256, 128, 64, 32]):
 def test_mnist():
     import tensorflow as tf
     import tensorflow.examples.tutorials.mnist.input_data as input_data
-    import matplotlib.pyplot as plt
-
+    
     # %%
     # load MNIST as before
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
@@ -130,8 +130,10 @@ def test_mnist():
         # Xhat += mu
     mean_diff = diff/n_examples
     zero_mean = np.transpose(np.array(diff_arr) - mean_diff)
-    zero_mean_cov = np.cov(zero_mean)
+    different_scale(zero_mean, mean_diff)
 
+
+def different_scale(zero_mean, mean_diff):
     fig = plt.figure()
     plt.subplot(1, 6, 1)
     plt.imshow(np.reshape(mean_diff, (28, 28)), cmap='gray', interpolation='nearest')
@@ -139,8 +141,6 @@ def test_mnist():
     plt.axis('off')
 
     u,s,v = LA.svd(zero_mean)
-    print(u.shape)
-    a,b = LA.eig(zero_mean_cov)
     for i in range(5):
         dataReduced = np.dot(np.transpose(u)[i], np.reshape(mean_diff, (784, 1)))
         zeros = np.zeros((784, 1))
@@ -154,7 +154,7 @@ def test_mnist():
 
     fig.show()
     plt.draw()
-    plt.savefig('test.png', bbox_inches='tight')
+    plt.savefig('individual_scale.png', bbox_inches='tight')
 
 if __name__ == '__main__':
     test_mnist()
