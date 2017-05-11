@@ -77,10 +77,9 @@ def autoencoder(dimensions=[784, 512, 256, 128, 64, 32]):
 
 # %%
 
-def pca(ae, dimensions):
-    # input to the network
-    x = tf.placeholder(tf.float32, [None, dimensions[0]], name='x')
-    current_input = corrupt(x) * ae['corrupt_prob'] + x * (1 - ae['corrupt_prob'])
+def pca(ae, dimensions, test_xs_norm):
+    # current_input = corrupt(x) * ae['corrupt_prob'] + x * (1 - ae['corrupt_prob'])
+    current_input = test_xs_norm
 
     # Build the encoder
     encoder = ae['encoder']
@@ -102,9 +101,7 @@ def pca(ae, dimensions):
         current_input = output
     # now have the reconstruction through the network
     y = current_input
-    # cost function measures pixel-wise difference
-    cost = tf.sqrt(tf.reduce_mean(tf.square(y - x)))
-    return {'y': y}
+    return y
 
 def test_mnist():
     import tensorflow as tf
@@ -130,7 +127,7 @@ def test_mnist():
     # %%
     # Fit all training data
     batch_size = 100
-    n_epochs = 5
+    n_epochs = 1
     for epoch_i in range(n_epochs):
         for batch_i in range(mnist.train.num_examples // batch_size):
             batch_xs, _ = mnist.train.next_batch(batch_size)
@@ -145,8 +142,9 @@ def test_mnist():
     test_xs, _ = mnist.test.next_batch(n_examples)
     test_xs_norm = np.array([img - mean_img for img in test_xs])
     recon = sess.run(ae['y'], feed_dict={ae['x']: test_xs_norm, ae['corrupt_prob']: [0.0]})
-    p = pca(ae, dim)
-    p_recon = sess.run(p['y'], feed_dict={ae['x']: test_xs_norm, ae['corrupt_prob']: [0.0]})
+    p = pca(ae, dim, test_xs_norm)
+    sess.run(tf.initialize_all_variables())
+    p_recon = sess.run(p)
     fig, axs = plt.subplots(3, n_examples, figsize=(10, 2))
 
     for example_i in range(n_examples):
