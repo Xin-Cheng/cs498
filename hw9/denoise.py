@@ -6,7 +6,8 @@ import tensorflow as tf
 import numpy as np
 import math
 from utils import corrupt
-
+from sklearn.decomposition import PCA
+from numpy import linalg as LA
 
 # %%
 def autoencoder(dimensions=[784, 512, 256, 128, 64, 32]):
@@ -87,7 +88,7 @@ def test_mnist():
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
     mean_img = np.mean(mnist.train.images, axis=0)
     dim = [784, 512, 256, 128, 64, 32]
-    n_examples = 20
+    n_examples = 10
     ae = autoencoder(dimensions=dim)
     
     # %%
@@ -119,8 +120,24 @@ def test_mnist():
 
     # fig, axs = plt.subplots(3, n_examples, figsize=(10, 2))
     diff = np.zeros((28*28))
+    diff_arr = []
     for example_i in range(n_examples):
-        diff = np.add(diff , test_xs[example_i, :] - [recon[example_i, :] + mean_img])
+        curr_diff = test_xs[example_i, :] - [recon[example_i, :] + mean_img]
+        diff = np.add(diff , curr_diff)
+        diff_arr.append(curr_diff[0])
+
+        # Xhat = np.dot(pca.transform(curr_diff), pca.components_[nComp,:])
+        # Xhat += mu
+    mean_diff = diff/n_examples
+    zero_mean = np.transpose(np.array(diff_arr) - mean_diff)
+    zero_mean_cov = np.cov(zero_mean)
+
+    u,s,v = LA.svd(zero_mean)
+    a,b = LA.eig(zero_mean_cov)
+    dataReduced = np.dot(np.transpose(u)[1][0],mean_diff)
+    # dataNew = np.reshape( np.concatenate((dataReduced,np.repeat([0],n_examples)),0 ), (1,784))
+    dataReconstruct = np.dot(u,np.reshape(dataReduced, (784, 1)))
+    print(u)
 
         # print(diff)
         # axs[0][example_i].imshow(np.reshape(test_xs[example_i, :], (28, 28)), cmap='gray', interpolation='nearest')
@@ -130,7 +147,7 @@ def test_mnist():
         # axs[2][example_i].imshow(np.reshape(diff, (28, 28)), cmap='gray', interpolation='nearest')
 
     diff = diff/n_examples
-    plt.imshow(np.reshape(diff, (28, 28)), cmap='gray', interpolation='nearest')
+    plt.imshow(np.reshape(np.transpose(dataReconstruct), (28, 28)), cmap='gray', interpolation='nearest')
     # fig.show()
     plt.draw()
     plt.savefig('test.png', bbox_inches='tight')
