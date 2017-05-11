@@ -77,7 +77,7 @@ def autoencoder(dimensions=[784, 512, 256, 128, 64, 32]):
 
 # %%
 
-def pca(ae, dimensions):
+def pca(ae, dimensions, n_examples):
     x = tf.placeholder(tf.float32, [None, dimensions[0]], name='x')
     # current_input = corrupt(x) * ae['corrupt_prob'] + x * (1 - ae['corrupt_prob'])
     current_input = x
@@ -93,6 +93,15 @@ def pca(ae, dimensions):
 
     # latent representation
     z = current_input
+    idx = 1
+    new_z = np.zeros((32, n_examples))
+    cdd = np.zeros((32, n_examples))
+    ones = [1]*32
+    new_z[:, idx] = ones
+
+    p = tf.constant(new_z, dtype = tf.float32)
+    current_input = tf.matmul(p, current_input)
+
     encoder.reverse()
     # Build the decoder using the same weights
     for layer_i, n_output in enumerate(dimensions[:-1][::-1]):
@@ -114,8 +123,9 @@ def test_mnist():
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
     mean_img = np.mean(mnist.train.images, axis=0)
     dim = [784, 512, 256, 128, 64, 32]
+    n_examples = 15
     ae = autoencoder(dimensions=dim)
-    p = pca(ae, dim)
+    p = pca(ae, dim, n_examples)
     # %%
     learning_rate = 0.001
     optimizer = tf.train.AdamOptimizer(learning_rate).minimize(ae['cost'])
@@ -128,7 +138,7 @@ def test_mnist():
     # %%
     # Fit all training data
     batch_size = 100
-    n_epochs = 10
+    n_epochs = 5
     for epoch_i in range(n_epochs):
         for batch_i in range(mnist.train.num_examples // batch_size):
             batch_xs, _ = mnist.train.next_batch(batch_size)
@@ -139,7 +149,6 @@ def test_mnist():
     
     # %%
     # Plot example reconstructions
-    n_examples = 15
     test_xs, _ = mnist.test.next_batch(n_examples)
     test_xs_norm = np.array([img - mean_img for img in test_xs])
     recon = sess.run(ae['y'], feed_dict={ae['x']: test_xs_norm, ae['corrupt_prob']: [0.0]})
