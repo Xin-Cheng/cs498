@@ -77,9 +77,10 @@ def autoencoder(dimensions=[784, 512, 256, 128, 64, 32]):
 
 # %%
 
-def pca(ae, dimensions, test_xs_norm):
+def pca(ae, dimensions):
+    x = tf.placeholder(tf.float32, [None, dimensions[0]], name='x')
     # current_input = corrupt(x) * ae['corrupt_prob'] + x * (1 - ae['corrupt_prob'])
-    current_input = test_xs_norm
+    current_input = x
 
     # Build the encoder
     encoder = ae['encoder']
@@ -101,7 +102,7 @@ def pca(ae, dimensions, test_xs_norm):
         current_input = output
     # now have the reconstruction through the network
     y = current_input
-    return y
+    return {'x': x, 'y': y}
 
 def test_mnist():
     import tensorflow as tf
@@ -127,7 +128,7 @@ def test_mnist():
     # %%
     # Fit all training data
     batch_size = 100
-    n_epochs = 1
+    n_epochs = 5
     for epoch_i in range(n_epochs):
         for batch_i in range(mnist.train.num_examples // batch_size):
             batch_xs, _ = mnist.train.next_batch(batch_size)
@@ -142,10 +143,10 @@ def test_mnist():
     test_xs, _ = mnist.test.next_batch(n_examples)
     test_xs_norm = np.array([img - mean_img for img in test_xs])
     recon = sess.run(ae['y'], feed_dict={ae['x']: test_xs_norm, ae['corrupt_prob']: [0.0]})
-    p = pca(ae, dim, test_xs_norm)
+    p = pca(ae, dim)
     sess.run(tf.initialize_all_variables())
-    p_recon = sess.run(p)
-    fig, axs = plt.subplots(3, n_examples, figsize=(10, 2))
+    p_recon = sess.run(p['y'], feed_dict={p['x']: test_xs_norm})
+    fig, axs = plt.subplots(4, n_examples, figsize=(10, 2))
 
     for example_i in range(n_examples):
         diff = test_xs[example_i, :] - [recon[example_i, :] + mean_img]
@@ -155,6 +156,8 @@ def test_mnist():
         axs[1][example_i].axis('off')
         axs[2][example_i].imshow(np.reshape(diff, (28, 28)), cmap='gray', interpolation='nearest')
         axs[2][example_i].axis('off')
+        axs[3][example_i].imshow(np.reshape([p_recon[example_i, :] + mean_img], (28, 28)), cmap='gray', interpolation='nearest')
+        axs[3][example_i].axis('off')
 
     fig.show()
     plt.draw()
