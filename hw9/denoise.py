@@ -88,7 +88,7 @@ def test_mnist():
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
     mean_img = np.mean(mnist.train.images, axis=0)
     dim = [784, 512, 256, 128, 64, 32]
-    n_examples = 50
+    n_examples = 10000
     ae = autoencoder(dimensions=dim)
     
     # %%
@@ -103,7 +103,7 @@ def test_mnist():
     # %%
     # Fit all training data
     batch_size = 100
-    n_epochs = 2
+    n_epochs = 20
     for epoch_i in range(n_epochs):
         for batch_i in range(mnist.train.num_examples // batch_size):
             batch_xs, _ = mnist.train.next_batch(batch_size)
@@ -135,6 +135,7 @@ def test_mnist():
     fig = plt.figure()
     plt.subplot(1, 6, 1)
     plt.imshow(np.reshape(mean_diff, (28, 28)), cmap='gray', interpolation='nearest')
+    plt.title('Mean Residue')
     plt.axis('off')
 
     u,s,v = LA.svd(zero_mean)
@@ -147,6 +148,8 @@ def test_mnist():
         dataReconstruct = np.dot(u,zeros)
         plt.subplot(1, 6, i + 2)
         plt.imshow(np.reshape(dataReconstruct, (28, 28)), cmap='gray', interpolation='nearest')
+        name = 'PC' + str(i + 1)
+        plt.title(name)
         plt.axis('off')
 
     fig.show()
