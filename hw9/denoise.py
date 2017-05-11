@@ -9,7 +9,7 @@ from utils import corrupt
 
 
 # %%
-def autoencoder(dimensions=[784, 512, 256, 128]):
+def autoencoder(dimensions=[784, 512, 256, 128, 64, 32]):
     """Build a deep denoising autoencoder w/ tied weights.
 
     Parameters
@@ -86,7 +86,7 @@ def test_mnist():
     # load MNIST as before
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
     mean_img = np.mean(mnist.train.images, axis=0)
-    ae = autoencoder(dimensions=[784, 512, 256, 128])
+    ae = autoencoder(dimensions=[784, 512, 256, 128, 64, 32])
 
     # %%
     learning_rate = 0.001
@@ -100,15 +100,14 @@ def test_mnist():
     # %%
     # Fit all training data
     batch_size = 100
-    n_epochs = 20
+    n_epochs = 5
     for epoch_i in range(n_epochs):
         for batch_i in range(mnist.train.num_examples // batch_size):
             batch_xs, _ = mnist.train.next_batch(batch_size)
             train = np.array([img - mean_img for img in batch_xs])
             sess.run(optimizer, feed_dict={
                 ae['x']: train, ae['corrupt_prob']: [1.0]})
-        print(epoch_i, sess.run(ae['cost'], feed_dict={
-            ae['x']: train, ae['corrupt_prob']: [1.0]}))
+        print(epoch_i, sess.run(ae['cost'], feed_dict={ae['x']: train, ae['corrupt_prob']: [1.0]}))
 
     # %%
     # Plot example reconstructions
