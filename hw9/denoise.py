@@ -88,7 +88,7 @@ def test_mnist():
     mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
     mean_img = np.mean(mnist.train.images, axis=0)
     dim = [784, 512, 256, 128, 64, 32]
-    n_examples = 10
+    n_examples = 50
     ae = autoencoder(dimensions=dim)
     
     # %%
@@ -132,23 +132,24 @@ def test_mnist():
     zero_mean = np.transpose(np.array(diff_arr) - mean_diff)
     zero_mean_cov = np.cov(zero_mean)
 
+    fig = plt.figure()
+    plt.subplot(1, 6, 1)
+    plt.imshow(np.reshape(mean_diff, (28, 28)), cmap='gray', interpolation='nearest')
+    plt.axis('off')
+
     u,s,v = LA.svd(zero_mean)
+    print(u.shape)
     a,b = LA.eig(zero_mean_cov)
-    dataReduced = np.dot(np.transpose(u)[1][0],mean_diff)
-    # dataNew = np.reshape( np.concatenate((dataReduced,np.repeat([0],n_examples)),0 ), (1,784))
-    dataReconstruct = np.dot(u,np.reshape(dataReduced, (784, 1)))
-    print(u)
+    for i in range(5):
+        dataReduced = np.dot(np.transpose(u)[i], np.reshape(mean_diff, (784, 1)))
+        zeros = np.zeros((784, 1))
+        zeros[i][0] = dataReduced
+        dataReconstruct = np.dot(u,zeros)
+        plt.subplot(1, 6, i + 2)
+        plt.imshow(np.reshape(dataReconstruct, (28, 28)), cmap='gray', interpolation='nearest')
+        plt.axis('off')
 
-        # print(diff)
-        # axs[0][example_i].imshow(np.reshape(test_xs[example_i, :], (28, 28)), cmap='gray', interpolation='nearest')
-        # axs[0][example_i].axis('off')
-        # axs[1][example_i].imshow(np.reshape([recon[example_i, :] + mean_img], (28, 28)), cmap='gray', interpolation='nearest')
-        # axs[1][example_i].axis('off')
-        # axs[2][example_i].imshow(np.reshape(diff, (28, 28)), cmap='gray', interpolation='nearest')
-
-    diff = diff/n_examples
-    plt.imshow(np.reshape(np.transpose(dataReconstruct), (28, 28)), cmap='gray', interpolation='nearest')
-    # fig.show()
+    fig.show()
     plt.draw()
     plt.savefig('test.png', bbox_inches='tight')
 
