@@ -100,7 +100,7 @@ def test_mnist():
     # %%
     # Fit all training data
     batch_size = 100
-    n_epochs = 10
+    n_epochs = 20
     for epoch_i in range(n_epochs):
         for batch_i in range(mnist.train.num_examples // batch_size):
             batch_xs, _ = mnist.train.next_batch(batch_size)
@@ -117,16 +117,20 @@ def test_mnist():
     test_xs_norm = np.array([img - mean_img for img in test_xs])
     recon = sess.run(ae['y'], feed_dict={
         ae['x']: test_xs_norm, ae['corrupt_prob']: [0.0]})
-    fig, axs = plt.subplots(2, n_examples, figsize=(10, 2))
+    fig, axs = plt.subplots(3, n_examples, figsize=(10, 2))
 
     for example_i in range(n_examples):
-        axs[0][example_i].imshow(np.reshape(test_xs[example_i, :], (28, 28)), cmap='gray')
+        diff = test_xs[example_i, :] - [recon[example_i, :] + mean_img]
+        axs[0][example_i].imshow(np.reshape(test_xs[example_i, :], (28, 28)), cmap='gray', interpolation='nearest')
         axs[0][example_i].axis('off')
-        axs[1][example_i].imshow(np.reshape([recon[example_i, :] + mean_img], (28, 28)), cmap='gray')
+        axs[1][example_i].imshow(np.reshape([recon[example_i, :] + mean_img], (28, 28)), cmap='gray', interpolation='nearest')
         axs[1][example_i].axis('off')
+        axs[2][example_i].imshow(np.reshape(diff, (28, 28)), cmap='gray', interpolation='nearest')
+        axs[2][example_i].axis('off')
 
     fig.show()
     plt.draw()
+    plt.waitforbuttonpress()
     plt.savefig('test.png', bbox_inches='tight')
 
 if __name__ == '__main__':
